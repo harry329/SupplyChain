@@ -25,7 +25,7 @@ App = {
 
     readForm: function () {
         App.sku = $("#sku").val();
-        App.upc = $("#upc").val();
+        App.upc = 0;
         App.ownerID = $("#ownerID").val();
         App.originFarmerID = $("#originFarmerID").val();
         App.originFarmName = $("#originFarmName").val();
@@ -33,7 +33,7 @@ App = {
         App.originFarmLatitude = $("#originFarmLatitude").val();
         App.originFarmLongitude = $("#originFarmLongitude").val();
         App.productNotes = $("#productNotes").val();
-        App.productPrice = $("#productPrice").val();
+        App.productPrice = 1;
         App.distributorID = $("#distributorID").val();
         App.retailerID = $("#retailerID").val();
         App.consumerID = $("#consumerID").val();
@@ -41,16 +41,16 @@ App = {
         console.log(
             App.sku,
             App.upc,
-            App.ownerID, 
-            App.originFarmerID, 
-            App.originFarmName, 
-            App.originFarmInformation, 
-            App.originFarmLatitude, 
-            App.originFarmLongitude, 
-            App.productNotes, 
-            App.productPrice, 
-            App.distributorID, 
-            App.retailerID, 
+            App.ownerID,
+            App.originFarmerID,
+            App.originFarmName,
+            App.originFarmInformation,
+            App.originFarmLatitude,
+            App.originFarmLongitude,
+            App.productNotes,
+            App.productPrice,
+            App.distributorID,
+            App.retailerID,
             App.consumerID
         );
     },
@@ -100,21 +100,36 @@ App = {
     initSupplyChain: function () {
         /// Source the truffle compiled smart contracts
         var jsonSupplyChain='../../build/contracts/SupplyChain.json';
-        
+
         /// JSONfy the smart contracts
         $.getJSON(jsonSupplyChain, function(data) {
             console.log('data',data);
             var SupplyChainArtifact = data;
             App.contracts.SupplyChain = TruffleContract(SupplyChainArtifact);
             App.contracts.SupplyChain.setProvider(App.web3Provider);
-            
+
             App.fetchItemBufferOne();
             App.fetchItemBufferTwo();
             App.fetchEvents();
+            App.addRoles();
 
         });
-
         return App.bindEvents();
+    },
+
+    addRoles: function () {
+        App.contracts.SupplyChain.deployed().then(function (instance) {
+            return instance.addRoles(
+                App.originFarmerID,
+                App.distributorID,
+                App.retailerID,
+                App.consumerID, {from: App.metamaskAccountID}
+            )
+        }).then(function(result) {
+            console.log('addRoles',result);
+        }).catch(function(err) {
+            console.log(err.message);
+        });
     },
 
     bindEvents: function() {
@@ -166,16 +181,22 @@ App = {
     harvestItem: function(event) {
         event.preventDefault();
         var processId = parseInt($(event.target).data('id'));
-
+        App.upc = parseInt(App.upc) + 1;
+        console.log("App.upc ", App.upc);
+        console.log("App.originFarmName ", App.originFarmName);
+        console.log("App.originFarmInformation ", App.originFarmInformation);
+        console.log("App.originFarmLatitude ", App.originFarmLatitude);
+        console.log("App.originFarmLongitude ", App.originFarmLongitude);
         App.contracts.SupplyChain.deployed().then(function(instance) {
             return instance.harvestItem(
-                App.upc, 
-                App.metamaskAccountID, 
-                App.originFarmName, 
-                App.originFarmInformation, 
-                App.originFarmLatitude, 
-                App.originFarmLongitude, 
+                App.upc,
+                App.metamaskAccountID,
+                App.originFarmName,
+                App.originFarmInformation,
+                App.originFarmLatitude,
+                App.originFarmLongitude,
                 App.productNotes
+                , {from: App.metamaskAccountID}
             );
         }).then(function(result) {
             $("#ftc-item").text(result);
@@ -198,7 +219,7 @@ App = {
             console.log(err.message);
         });
     },
-    
+
     packItem: function (event) {
         event.preventDefault();
         var processId = parseInt($(event.target).data('id'));
@@ -235,7 +256,7 @@ App = {
 
         App.contracts.SupplyChain.deployed().then(function(instance) {
             const walletValue = web3.toWei(3, "ether");
-            return instance.buyItem(App.upc, {from: App.metamaskAccountID, value: walletValue});
+            return instance.buyItem(parseInt(App.upc) ,{from: App.metamaskAccountID, value: walletValue});
         }).then(function(result) {
             $("#ftc-item").text(result);
             console.log('buyItem',result);
@@ -289,11 +310,11 @@ App = {
     fetchItemBufferOne: function () {
     ///   event.preventDefault();
     ///    var processId = parseInt($(event.target).data('id'));
-        App.upc = $('#upc').val();
-        console.log('upc',App.upc);
+        const upc= $('#upc').val();
+        console.log('upc',upc);
 
         App.contracts.SupplyChain.deployed().then(function(instance) {
-          return instance.fetchItemBufferOne(App.upc);
+          return instance.fetchItemBufferOne(upc, {from: App.metamaskAccountID});
         }).then(function(result) {
           $("#ftc-item").text(result);
           console.log('fetchItemBufferOne', result);
@@ -305,9 +326,10 @@ App = {
     fetchItemBufferTwo: function () {
     ///    event.preventDefault();
     ///    var processId = parseInt($(event.target).data('id'));
-                        
+        const upc= $('#upc').val();
+        console.log('upc',upc);
         App.contracts.SupplyChain.deployed().then(function(instance) {
-          return instance.fetchItemBufferTwo.call(App.upc);
+          return instance.fetchItemBufferTwo(App.upc, {from: App.metamaskAccountID});
         }).then(function(result) {
           $("#ftc-item").text(result);
           console.log('fetchItemBufferTwo', result);
@@ -334,7 +356,7 @@ App = {
         }).catch(function(err) {
           console.log(err.message);
         });
-        
+
     }
 };
 
