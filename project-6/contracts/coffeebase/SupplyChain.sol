@@ -6,7 +6,7 @@ import "../coffeeaccesscontrol/DistributorRole.sol";
 import "../coffeeaccesscontrol/RetailerRole.sol";
 import "../coffeecore/Ownable.sol";
 // Define a contract 'Supplychain'
-contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole {
+contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole, Ownable {
 
 //  ConsumerRole private _consumerRole;
 //  FarmerRole private _farmerRole;
@@ -15,7 +15,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
 //  Ownable private _ownalbe;
 
   // Define 'owner'
-  address owner;
+  address baseOwner;
 
   // Define a variable called 'upc' for Universal Product Code (UPC)
   uint  upc;
@@ -76,7 +76,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
 
   // Define a modifier that checks to see if msg.sender == owner of the contract
   modifier onlyOwner() {
-    require(msg.sender == owner);
+    require(msg.sender == baseOwner);
     _;
   }
 
@@ -163,14 +163,14 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
   // and set 'sku' to 1
   // and set 'upc' to 1
   constructor() public payable {
-    owner = msg.sender;
+    baseOwner = msg.sender;
     sku = 1;
     upc = 1;
   }
 
   // Define a function 'kill' if required
   function kill() public {
-    if (msg.sender == owner) {
+    if (msg.sender == baseOwner) {
 //      selfdestruct(owner);
     }
   }
@@ -201,7 +201,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
   // Call modifier to check if upc has passed previous supply chain stage
   harvested(_upc)
   // Call modifier to verify caller of this function
-  verifyCaller(msg.sender) public
+  verifyCaller(items[_upc].ownerID) public
   {
     require(isFarmer(msg.sender), "You don't have farmer role");
     // Update the appropriate fields
@@ -215,7 +215,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
   // Call modifier to check if upc has passed previous supply chain stage
   processed(_upc)
   // Call modifier to verify caller of this function
-  verifyCaller(msg.sender) public
+  verifyCaller(items[_upc].ownerID) public
   {
     require(isFarmer(msg.sender), "You don't have farmer role");
     // Update the appropriate fields
@@ -229,7 +229,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
   // Call modifier to check if upc has passed previous supply chain stage
   packed(_upc)
   // Call modifier to verify caller of this function
-  verifyCaller(msg.sender) public
+  verifyCaller(items[_upc].ownerID) public
   {
     require(isFarmer(msg.sender), "You don't have farmer role");
     // Update the appropriate fields
@@ -271,7 +271,7 @@ contract SupplyChain is ConsumerRole, FarmerRole, DistributorRole, RetailerRole 
     // Call modifier to check if upc has passed previous supply chain stage
     sold(_upc)
     // Call modifier to verify caller of this function
-    verifyCaller(msg.sender) public
+    verifyCaller(items[_upc].ownerID) public
   {
     require(isDistributor(msg.sender), "You don't have distributor role");
     // Update the appropriate fields
